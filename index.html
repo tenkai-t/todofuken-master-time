@@ -184,7 +184,18 @@ if(correct){
 score++;
 document.getElementById("result").innerText="⭕正解！";
 }else{
-let ans=mode==="name"?quiz[current].name:quiz[current].capital;
+let ans;
+
+if(mode==="name"){
+    ans = quiz[current].name;
+}else{
+    if(quiz[current].name === "東京都"){
+        ans = "東京(新宿区)";
+    }else{
+        ans = quiz[current].capital;
+    }
+}
+
 document.getElementById("result").innerText="❌正解は "+ans;
 }
 
@@ -347,4 +358,5 @@ style="display:none;margin-top:10px;background:#222;color:white;">
 </button>
 
 </body>
+
 </html>
