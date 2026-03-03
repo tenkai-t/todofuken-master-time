@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>都道府県マスター タイムアタック</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    text-align:center;
+    background:#eef7ff;
+}
+
+#prefImage{
+    width:350px;
+    margin:15px;
+}
+
+button{
+    margin:5px;
+    padding:8px 15px;
+}
+
+#retryBtn{
+    display:none;
+}
+
+#timerBarContainer{
+    width:80%;
+    height:25px;
+    background:#ddd;
+    margin:10px auto;
+    border-radius:15px;
+    overflow:hidden;
+}
+
+#timerBar{
+    height:100%;
+    width:100%;
+    background:linear-gradient(to right,#4caf50,#ff9800,#f44336);
+}
+
+#ranking{
+    background:white;
+    padding:10px;
+    margin-top:15px;
+    display:inline-block;
+    border-radius:10px;
+}
+</style>
+</head>
+<body>
+
+<h1>都道府県マスター タイムアタック</h1>
+
+<button onclick="setMode('name')">都道府県名モード</button>
+<button onclick="setMode('capital')">県庁所在地モード</button>
+
+<h2 id="modeDisplay"></h2>
+<h2 id="questionNumber"></h2>
+
+<div id="timerBarContainer">
+<div id="timerBar"></div>
+</div>
+<p id="timeText"></p>
+
+<img id="prefImage" src="">
+
+<br>
+<input type="text" id="answer" placeholder="答えを入力">
+<button onclick="checkAnswer()">回答</button>
+
+<p id="result"></p>
+<p id="score"></p>
+
+<button id="retryBtn" onclick="start()">🔁 もう一度挑戦</button>
+
+<div id="ranking">
+<h3>🏆 ランキング TOP10</h3>
+<ol id="rankingList"></ol>
+</div>
+
+<script>
+
+const prefectures = [ { name:"北海道", kana:"ほっかいどう", capital:"札幌市", capitalKana:"さっぽろし"}, { name:"青森県", kana:"あおもりけん", capital:"青森市", capitalKana:"あおもりし"}, { name:"岩手県", kana:"いわてけん", capital:"盛岡市", capitalKana:"もりおかし"}, { name:"宮城県", kana:"みやぎけん", capital:"仙台市", capitalKana:"せんだいし"}, { name:"秋田県", kana:"あきたけん", capital:"秋田市", capitalKana:"あきたし"}, { name:"山形県", kana:"やまがたけん", capital:"山形市", capitalKana:"やまがたし"}, { name:"福島県", kana:"ふくしまけん", capital:"福島市", capitalKana:"ふくしまし"}, { name:"茨城県", kana:"いばらきけん", capital:"水戸市", capitalKana:"みとし"}, { name:"栃木県", kana:"とちぎけん", capital:"宇都宮市", capitalKana:"うつのみやし"}, { name:"群馬県", kana:"ぐんまけん", capital:"前橋市", capitalKana:"まえばしし"}, { name:"埼玉県", kana:"さいたまけん", capital:"さいたま市", capitalKana:"さいたまし"}, { name:"千葉県", kana:"ちばけん", capital:"千葉市", capitalKana:"ちばし"}, { name:"東京都", kana:"とうきょうと", capital:"新宿区", capitalKana:"しんじゅくく"}, { name:"神奈川県", kana:"かながわけん", capital:"横浜市", capitalKana:"よこはまし"}, { name:"新潟県", kana:"にいがたけん", capital:"新潟市", capitalKana:"にいがたし"}, { name:"富山県", kana:"とやまけん", capital:"富山市", capitalKana:"とやまし"}, { name:"石川県", kana:"いしかわけん", capital:"金沢市", capitalKana:"かなざわし"}, { name:"福井県", kana:"ふくいけん", capital:"福井市", capitalKana:"ふくいし"}, { name:"山梨県", kana:"やまなしけん", capital:"甲府市", capitalKana:"こうふし"}, { name:"長野県", kana:"ながのけん", capital:"長野市", capitalKana:"ながのし"}, { name:"岐阜県", kana:"ぎふけん", capital:"岐阜市", capitalKana:"ぎふし"}, { name:"静岡県", kana:"しずおかけん", capital:"静岡市", capitalKana:"しずおかし"}, { name:"愛知県", kana:"あいちけん", capital:"名古屋市", capitalKana:"なごやし"}, { name:"三重県", kana:"みえけん", capital:"津市", capitalKana:"つし"}, { name:"滋賀県", kana:"しがけん", capital:"大津市", capitalKana:"おおつし"}, { name:"京都府", kana:"きょうとふ", capital:"京都市", capitalKana:"きょうとし"}, { name:"大阪府", kana:"おおさかふ", capital:"大阪市", capitalKana:"おおさかし"}, { name:"兵庫県", kana:"ひょうごけん", capital:"神戸市", capitalKana:"こうべし"}, { name:"奈良県", kana:"ならけん", capital:"奈良市", capitalKana:"ならし"}, { name:"和歌山県", kana:"わかやまけん", capital:"和歌山市", capitalKana:"わかやまし"}, { name:"鳥取県", kana:"とっとりけん", capital:"鳥取市", capitalKana:"とっとりし"}, { name:"島根県", kana:"しまねけん", capital:"松江市", capitalKana:"まつえし"}, { name:"岡山県", kana:"おかやまけん", capital:"岡山市", capitalKana:"おかやまし"}, { name:"広島県", kana:"ひろしまけん", capital:"広島市", capitalKana:"ひろしまし"}, { name:"山口県", kana:"やまぐちけん", capital:"山口市", capitalKana:"やまぐちし"}, { name:"徳島県", kana:"とくしまけん", capital:"徳島市", capitalKana:"とくしまし"}, { name:"香川県", kana:"かがわけん", capital:"高松市", capitalKana:"たかまつし"}, { name:"愛媛県", kana:"えひめけん", capital:"松山市", capitalKana:"まつやまし"}, { name:"高知県", kana:"こうちけん", capital:"高知市", capitalKana:"こうちし"}, { name:"福岡県", kana:"ふくおかけん", capital:"福岡市", capitalKana:"ふくおかし"}, { name:"佐賀県", kana:"さがけん", capital:"佐賀市", capitalKana:"さがし"}, { name:"長崎県", kana:"ながさきけん", capital:"長崎市", capitalKana:"ながさきし"}, { name:"熊本県", kana:"くまもとけん", capital:"熊本市", capitalKana:"くまもとし"}, { name:"大分県", kana:"おおいたけん", capital:"大分市", capitalKana:"おおいたし"}, { name:"宮崎県", kana:"みやざきけん", capital:"宮崎市", capitalKana:"みやざきし"}, { name:"鹿児島県", kana:"かごしまけん", capital:"鹿児島市", capitalKana:"かごしまし"}, { name:"沖縄県", kana:"おきなわけん", capital:"那覇市", capitalKana:"なはし"} ];
+
+</script>
+
+<script>
+
+let quiz=[], current=0, score=0, mode="name";
+let timer;
+const LIMIT=470;
+let timeLeft=LIMIT;
+
+function setMode(m){
+mode=m;
+
+document.getElementById("modeDisplay").innerText=
+mode==="name"?"都道府県名モード":"県庁所在地モード";
+
+showRanking();  // ←追加
+start();
+}
+function start(){
+quiz=[...prefectures].sort(()=>0.5-Math.random());
+current=0;
+score=0;
+timeLeft=LIMIT;
+
+document.getElementById("retryBtn").style.display="none";
+document.getElementById("score").innerText="";
+document.getElementById("result").innerText="";
+
+startTimer();
+next();
+}
+
+function startTimer(){
+clearInterval(timer);
+timer=setInterval(()=>{
+timeLeft--;
+updateTimer();
+
+if(timeLeft<=0){
+clearInterval(timer);
+finish();
+}
+},1000);
+}
+
+function updateTimer(){
+let percent=(timeLeft/LIMIT)*100;
+document.getElementById("timerBar").style.width=percent+"%";
+
+document.getElementById("timeText").innerText=
+"残り時間："+timeLeft+"秒";
+
+/* 🔥 色変化（緑→黄→赤） */
+let hue = (percent * 1.2); 
+// 0%→0(赤) / 100%→120(緑)
+document.getElementById("timerBar").style.background=
+"hsl("+hue+", 90%, 50%)";
+}
+
+function next(){
+if(current>=quiz.length){
+finish();
+return;
+}
+
+document.getElementById("questionNumber").innerText=
+"第"+(current+1)+"問 / 47問";
+
+if(mode==="name"){
+    document.getElementById("prefImage").src =
+    "images/name/"+quiz[current].name+".png";
+}else{
+    document.getElementById("prefImage").src =
+    "images/capital/"+quiz[current].name+".png";
+}
+
+document.getElementById("answer").value="";
+document.getElementById("result").innerText="";
+}
+
+function checkAnswer(){
+let input=document.getElementById("answer").value.trim();
+let correct=false;
+
+if(mode==="name"){
+correct=(input===quiz[current].name||input===quiz[current].kana);
+}else{
+correct=(
+input===quiz[current].capital||
+input===quiz[current].capitalKana||
+ (quiz[current].name === "東京都" &&
+     (input === "東京" || input === "とうきょう"))
+);
+
+}
+
+if(correct){
+score++;
+document.getElementById("result").innerText="⭕正解！";
+}else{
+let ans=mode==="name"?quiz[current].name:quiz[current].capital;
+document.getElementById("result").innerText="❌正解は "+ans;
+}
+
+current++;
+setTimeout(next,800);
+}
+
+function finish(){
+clearInterval(timer);
+
+document.getElementById("questionNumber").innerText="終了！";
+document.getElementById("score").innerText=
+"正解数："+score+" / 47問";
+
+document.getElementById("retryBtn").style.display="inline-block";
+
+let name=prompt("ランキング登録しますか？名前を入力してください");
+if(name){
+saveRanking(name,score,timeLeft);
+showRanking();
+}
+}
+
+/* =============================
+   🏆 モード別ランキング管理
+============================= */
+
+function getRankingKey(){
+    return mode === "name" ? "ranking_name" : "ranking_capital";
+}
+
+function saveRanking(name,score,time){
+
+let key = getRankingKey();
+let data = JSON.parse(localStorage.getItem(key)) || [];
+
+data.push({name:name,score:score,time:time});
+
+data.sort((a,b)=>{
+
+if(b.score !== a.score){
+return b.score - a.score;
+}
+
+if(a.score === 47 && b.score === 47){
+return b.time - a.time;
+}
+
+return 0;
+});
+
+data = data.slice(0,10);
+
+localStorage.setItem(key,JSON.stringify(data));
+}
+
+function showRanking(){
+
+let key = getRankingKey();
+let data = JSON.parse(localStorage.getItem(key)) || [];
+
+let list = document.getElementById("rankingList");
+list.innerHTML="";
+
+data.forEach((r,index)=>{
+
+let medal = "";
+if(index === 0) medal = "🥇 ";
+if(index === 1) medal = "🥈 ";
+if(index === 2) medal = "🥉 ";
+
+let li = document.createElement("li");
+
+li.innerHTML =
+medal +
+r.name + " - " + r.score + "問正解" +
+(r.score===47 ? "（残り"+r.time+"秒）":"");
+
+if(index < 3){
+li.style.fontSize="18px";
+li.style.fontWeight="bold";
+}
+
+list.appendChild(li);
+});
+}
+
+
+// =============================
+// 🔒 先生モード 隠しコマンド設定
+// =============================
+
+const SECRET_COMMAND = "teacher";   // ←好きな隠しコマンドに変更OK
+const TEACHER_PASSWORD = "1729";   // ←先生用パスワード変更OK
+
+let secretBuffer = "";
+
+document.addEventListener("keydown", function(e){
+
+// アルファベットのみ取得
+if(e.key.length === 1){
+secretBuffer += e.key.toLowerCase();
+}
+
+// 長くなりすぎないよう制限
+if(secretBuffer.length > 20){
+secretBuffer = secretBuffer.slice(-20);
+}
+
+// コマンド一致判定
+if(secretBuffer.includes(SECRET_COMMAND)){
+toggleTeacherButton();
+secretBuffer = "";
+}
+
+});
+
+function toggleTeacherButton(){
+let btn = document.getElementById("teacherBtn");
+
+if(btn.style.display === "none"){
+btn.style.display = "inline-block";
+alert("🔒 先生モードが有効になりました");
+}else{
+btn.style.display = "none";
+alert("🔒 先生モードを終了しました");
+}
+}
+
+// パスワード付きリセット
+function teacherReset(){
+
+let pass = prompt("先生専用パスワードを入力してください");
+
+if(pass === TEACHER_PASSWORD){
+
+if(confirm("現在のモードのランキングを削除しますか？")){
+
+let key = getRankingKey();   // ←これが重要
+localStorage.removeItem(key);
+
+showRanking();
+alert("ランキングをリセットしました");
+}
+
+}else{
+alert("パスワードが違います");
+}
+
+}
+showRanking();
+setMode("name");
+
+</script>
+
+<button id="teacherBtn"
+onclick="teacherReset()"
+style="display:none;margin-top:10px;background:#222;color:white;">
+🔒 先生専用ランキングリセット
+</button>
+
+</body>
+</html>
